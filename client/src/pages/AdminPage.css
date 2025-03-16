@@ -1,0 +1,84 @@
+/* src/pages/AdminPage.css */
+.admin-page {
+    padding: 1rem 0;
+  }
+  
+  .admin-page h1 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .admin-page p {
+    margin-bottom: 2rem;
+    color: var(--text-color);
+  }
+  
+  .solution-form {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+  
+  .submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .submit-btn:hover {
+    background-color: #3a7bc8;
+  }
+  
+  .message {
+    background-color: var(--success-color);
+    color: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .playlists-info {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+  }
+  
+  .playlists-info h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .playlists-info ul {
+    padding-left: 1.5rem;
+  }
+  
+  .playlists-info li {
+    margin-bottom: 0.5rem;
+  }
