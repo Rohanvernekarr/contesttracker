@@ -1,118 +1,127 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import './AdminPage.css';
 
 const AdminPage = () => {
   const [contests, setContests] = useState([]);
-  const [selectedContest, setSelectedContest] = useState('');
+  const [selectedContest, setSelectedContest] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    const fetchContests = async () => {
-      try {
-        setLoading(true);
-        // Fetch past contests
-        const response = await api.get('/contests?status=past');
-        setContests(response.data.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching contests:', error);
-        setLoading(false);
-      }
-    };
-    
     fetchContests();
   }, []);
-  
-  const handleContestChange = (e) => {
-    setSelectedContest(e.target.value);
+
+  const fetchContests = async () => {
+    try {
+      const response = await api.get('/contests');
+      if (response.data.success) {
+        setContests(response.data.data);
+      }
+    } catch (error) {
+      setError('Failed to fetch contests');
+      console.error('Error fetching contests:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleUrlChange = (e) => {
-    setYoutubeUrl(e.target.value);
-  };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!selectedContest || !youtubeUrl) {
-      setMessage('Please select a contest and provide a YouTube URL');
-      return;
-    }
-    
     try {
-      await api.post('/solutions', {
-        contestId: selectedContest,
-        youtubeUrl
+      const response = await api.post('/solutions', {
+        contestId: selectedContest._id,
+        youtubeUrl,
       });
-      
-      setMessage('Solution added successfully!');
-      setSelectedContest('');
-      setYoutubeUrl('');
-      
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setMessage('');
-      }, 3000);
+      if (response.data.success) {
+        setYoutubeUrl('');
+        fetchContests();
+      }
     } catch (error) {
+      setError('Failed to add solution');
       console.error('Error adding solution:', error);
-      setMessage('Error adding solution. Please try again.');
     }
   };
-  
+
   if (loading) {
-    return <div className="loading">Loading contests...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
-  
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-page">
-      <h1>Admin Panel</h1>
-      <p>Add YouTube solution links to past contests</p>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+        Admin Dashboard
+      </h1>
       
-      {message && <div className="message">{message}</div>}
-      
-      <form className="solution-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="contest">Select Contest:</label>
-          <select 
-            id="contest" 
-            value={selectedContest} 
-            onChange={handleContestChange}
-            required
-          >
-            <option value="">-- Select a contest --</option>
-            {contests.map(contest => (
-              <option key={contest._id} value={contest._id}>
-                {contest.platform} - {contest.name}
-              </option>
-            ))}
-          </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Past Contests
+          </h2>
+          <div className="space-y-4">
+            {contests
+              .filter(contest => contest.status === 'past')
+              .map(contest => (
+                <div
+                  key={contest._id}
+                  className={`card cursor-pointer ${
+                    selectedContest?._id === contest._id
+                      ? 'ring-2 ring-primary'
+                      : ''
+                  }`}
+                  onClick={() => setSelectedContest(contest)}
+                >
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    {contest.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {new Date(contest.startTime).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+          </div>
         </div>
-        
-        <div className="form-group">
-          <label htmlFor="youtubeUrl">YouTube Solution URL:</label>
-          <input 
-            type="url" 
-            id="youtubeUrl" 
-            value={youtubeUrl} 
-            onChange={handleUrlChange}
-            placeholder="https://www.youtube.com/watch?v=..."
-            required
-          />
+
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Add Solution
+          </h2>
+          {selectedContest ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  YouTube URL
+                </label>
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  className="input"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary">
+                Add Solution
+              </button>
+            </form>
+          ) : (
+            <p className="text-gray-600 dark:text-gray-400">
+              Select a contest to add a solution
+            </p>
+          )}
         </div>
-        
-        <button type="submit" className="submit-btn">Add Solution</button>
-      </form>
-      
-      <div className="playlists-info">
-        <h2>YouTube Playlists</h2>
-        <ul>
-          <li><a href="https://youtube.com/playlist?list=your-leetcode-playlist" target="_blank" rel="noopener noreferrer">Leetcode PCDs</a></li>
-          <li><a href="https://youtube.com/playlist?list=your-codeforces-playlist" target="_blank" rel="noopener noreferrer">Codeforces PCDs</a></li>
-          <li><a href="https://youtube.com/playlist?list=your-codechef-playlist" target="_blank" rel="noopener noreferrer">Codechef PCDs</a></li>
-        </ul>
       </div>
     </div>
   );

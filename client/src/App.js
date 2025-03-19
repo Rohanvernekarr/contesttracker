@@ -1,28 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import BookmarksPage from './pages/BookmarksPage';
 import AdminPage from './pages/AdminPage';
-import './App.css';
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <div className="app">
-          <Navbar />
-          <div className="container">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/bookmarks" element={<BookmarksPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-            </Routes>
-          </div>
-        </div>
-      </Router>
-    </ThemeProvider>
+    <Router>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navbar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 

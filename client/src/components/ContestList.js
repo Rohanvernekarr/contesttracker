@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ContestCard from './ContestCard';
 import FilterComponent from './FilterComponent';
 import api from '../utils/api';
-import './ContestList.css';
 
 const ContestList = () => {
   const [contests, setContests] = useState([]);
@@ -72,21 +71,25 @@ const ContestList = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading contests...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="contest-list-container">
+    <div className="space-y-6">
       <FilterComponent 
         filters={filters} 
         onFilterChange={handleFilterChange} 
       />
       
-      <div className="contest-count">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
         {filteredContests.length} contests found
       </div>
       
-      <div className="contest-list">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredContests.length > 0 ? (
           filteredContests.map(contest => (
             <ContestCard 
@@ -97,7 +100,9 @@ const ContestList = () => {
             />
           ))
         ) : (
-          <div className="no-contests">No contests found with the selected filters.</div>
+          <div className="col-span-full text-center text-gray-600 dark:text-gray-400 py-8">
+            No contests found with the selected filters.
+          </div>
         )}
       </div>
     </div>

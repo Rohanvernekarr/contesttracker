@@ -35,26 +35,22 @@ const fetchCodeforcesContests = async () => {
  */
 const fetchCodechefContests = async () => {
   try {
-    // Using the unofficial CodeChef API
-    const response = await axios.get('https://www.codechef.com/api/contests');
+    // Using the new CodeChef API endpoint
+    const response = await axios.get('https://www.codechef.com/api/list/contests/all');
     
-    const allContests = [
-      ...response.data.future_contests,
-      ...response.data.present_contests,
-      ...response.data.past_contests
-    ];
-    
-    const contests = allContests.map(contest => ({
-      name: contest.contest_name,
-      platform: 'CodeChef',
-      startTime: new Date(contest.contest_start_date_iso),
-      endTime: new Date(contest.contest_end_date_iso),
-      url: `https://www.codechef.com/${contest.contest_code}`,
-      status: contest.status === 'future' ? 'upcoming' : 
-              contest.status === 'present' ? 'ongoing' : 'past'
-    }));
-    
-    return contests;
+    if (response.data && response.data.future_contests) {
+      const contests = response.data.future_contests.map(contest => ({
+        name: contest.contest_name,
+        platform: 'CodeChef',
+        startTime: new Date(contest.contest_start_date),
+        endTime: new Date(contest.contest_end_date),
+        url: `https://www.codechef.com/${contest.contest_code}`,
+        status: 'upcoming'
+      }));
+      
+      return contests;
+    }
+    return [];
   } catch (error) {
     console.error('Error fetching CodeChef contests:', error);
     return [];
@@ -121,9 +117,17 @@ const fetchLeetcodeContests = async () => {
  */
 const fetchAllContests = async () => {
   try {
+    console.log('Fetching contests from Codeforces...');
     const codeforces = await fetchCodeforcesContests();
+    console.log(`Found ${codeforces.length} Codeforces contests`);
+
+    console.log('Fetching contests from CodeChef...');
     const codechef = await fetchCodechefContests();
+    console.log(`Found ${codechef.length} CodeChef contests`);
+
+    console.log('Fetching contests from LeetCode...');
     const leetcode = await fetchLeetcodeContests();
+    console.log(`Found ${leetcode.length} LeetCode contests`);
     
     const allContests = [...codeforces, ...codechef, ...leetcode];
     
@@ -141,11 +145,15 @@ const fetchAllContests = async () => {
     
     // Bulk upsert contests
     for (const contest of allContests) {
-      await Contest.findOneAndUpdate(
-        { name: contest.name, platform: contest.platform },
-        contest,
-        { upsert: true, new: true }
-      );
+      try {
+        await Contest.findOneAndUpdate(
+          { name: contest.name, platform: contest.platform },
+          contest,
+          { upsert: true, new: true }
+        );
+      } catch (error) {
+        console.error(`Error updating contest ${contest.name}:`, error);
+      }
     }
     
     console.log(`Successfully updated ${allContests.length} contests`);

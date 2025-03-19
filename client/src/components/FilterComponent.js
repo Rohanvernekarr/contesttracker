@@ -1,28 +1,17 @@
 import React from 'react';
-import './FilterComponent.css';
 
 const FilterComponent = ({ filters, onFilterChange }) => {
   const platforms = ['Codeforces', 'CodeChef', 'LeetCode'];
   const statuses = ['upcoming', 'ongoing', 'past'];
   
   const handlePlatformChange = (platform) => {
-    let updatedPlatforms;
-    
-    if (filters.platform.includes(platform)) {
-      // Remove platform if already selected
-      updatedPlatforms = filters.platform.filter(p => p !== platform);
-      // Ensure at least one platform is selected
-      if (updatedPlatforms.length === 0) {
-        return;
-      }
-    } else {
-      // Add platform if not selected
-      updatedPlatforms = [...filters.platform, platform];
-    }
+    const newPlatforms = filters.platform.includes(platform)
+      ? filters.platform.filter(p => p !== platform)
+      : [...filters.platform, platform];
     
     onFilterChange({
       ...filters,
-      platform: updatedPlatforms
+      platform: newPlatforms
     });
   };
   
@@ -34,36 +23,41 @@ const FilterComponent = ({ filters, onFilterChange }) => {
   };
   
   return (
-    <div className="filter-container">
-      <div className="filter-section">
-        <h3>Platforms</h3>
-        <div className="platform-filters">
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Platforms</h3>
+        <div className="flex flex-wrap gap-2">
           {platforms.map(platform => (
-            <label key={platform} className="platform-filter">
-              <input
-                type="checkbox"
-                checked={filters.platform.includes(platform)}
-                onChange={() => handlePlatformChange(platform)}
-              />
+            <button
+              key={platform}
+              onClick={() => handlePlatformChange(platform)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200
+                ${filters.platform.includes(platform)
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+            >
               {platform}
-            </label>
+            </button>
           ))}
         </div>
       </div>
       
-      <div className="filter-section">
-        <h3>Status</h3>
-        <div className="status-filters">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Status</h3>
+        <div className="flex flex-wrap gap-2">
           {statuses.map(status => (
-            <label key={status} className="status-filter">
-              <input
-                type="radio"
-                name="status"
-                checked={filters.status === status}
-                onChange={() => handleStatusChange(status)}
-              />
+            <button
+              key={status}
+              onClick={() => handleStatusChange(status)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200
+                ${filters.status === status
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+            >
               {status.charAt(0).toUpperCase() + status.slice(1)}
-            </label>
+            </button>
           ))}
         </div>
       </div>

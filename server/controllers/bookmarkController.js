@@ -2,20 +2,18 @@ const Bookmark = require('../models/Bookmark');
 const Contest = require('../models/Contest');
 
 /**
- * Get all bookmarks for a user
+ * Get all bookmarks
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
 exports.getBookmarks = async (req, res) => {
   try {
-    const { userId } = req.params;
-    
-    const bookmarks = await Bookmark.find({ userId }).populate('contestId');
+    const bookmarks = await Bookmark.find().populate('contestId');
     
     res.json({
       success: true,
       count: bookmarks.length,
-      data: bookmarks
+      data: bookmarks.map(bookmark => bookmark.contestId)
     });
   } catch (error) {
     console.error('Error in getBookmarks:', error);
@@ -33,12 +31,12 @@ exports.getBookmarks = async (req, res) => {
  */
 exports.addBookmark = async (req, res) => {
   try {
-    const { userId, contestId } = req.body;
+    const { contestId } = req.body;
     
-    if (!userId || !contestId) {
+    if (!contestId) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide userId and contestId'
+        error: 'Please provide contestId'
       });
     }
     
@@ -52,7 +50,7 @@ exports.addBookmark = async (req, res) => {
     }
     
     // Check if bookmark already exists
-    const existingBookmark = await Bookmark.findOne({ userId, contestId });
+    const existingBookmark = await Bookmark.findOne({ contestId });
     if (existingBookmark) {
       return res.status(400).json({
         success: false,
@@ -61,13 +59,12 @@ exports.addBookmark = async (req, res) => {
     }
     
     const bookmark = await Bookmark.create({
-      userId,
       contestId
     });
     
     res.status(201).json({
       success: true,
-      data: bookmark
+      data: contest
     });
   } catch (error) {
     console.error('Error in addBookmark:', error);
@@ -85,9 +82,9 @@ exports.addBookmark = async (req, res) => {
  */
 exports.removeBookmark = async (req, res) => {
   try {
-    const { userId, contestId } = req.params;
+    const { contestId } = req.params;
     
-    const bookmark = await Bookmark.findOneAndDelete({ userId, contestId });
+    const bookmark = await Bookmark.findOneAndDelete({ contestId });
     
     if (!bookmark) {
       return res.status(404).json({

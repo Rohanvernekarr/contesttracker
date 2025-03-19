@@ -5,14 +5,11 @@ const router = express.Router();
 
 router
   .route('/')
+  .get(getBookmarks)
   .post(addBookmark);
 
 router
-  .route('/:userId')
-  .get(getBookmarks);
-
-router
-  .route('/:userId/:contestId')
+  .route('/:contestId')
   .delete(removeBookmark);
 
 module.exports = router;
