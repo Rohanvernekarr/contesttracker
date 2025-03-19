@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import BookmarksPage from './pages/BookmarksPage';
 import AdminPage from './pages/AdminPage';
-
+import Footer from './components/Footer';
 function App() {
   return (
     <Router>
@@ -17,6 +17,7 @@ function App() {
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );
