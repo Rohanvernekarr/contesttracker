@@ -8,6 +8,7 @@ const Contest = require('../models/Contest');
 exports.getContests = async (req, res) => {
   try {
     const { platform, status } = req.query;
+    const now = new Date();
     
     const filter = {};
     
@@ -18,13 +19,45 @@ exports.getContests = async (req, res) => {
         filter.platform = { $in: platforms };
       }
     }
+
+    // If status is ongoing, modify the query to get contests that are currently ongoing
+    if (status === 'ongoing') {
+      filter.startTime = { $lte: now };
+      filter.endTime = { $gte: now };
+    }
+    
+    // Get contests based on filter
+    let contests = await Contest.find(filter).sort({ startTime: 1 });
+    
+    // Calculate status dynamically based on current time
+    contests = contests.map(contest => {
+      const contestObj = contest.toObject();
+      if (now < new Date(contest.startTime)) {
+        contestObj.status = 'upcoming';
+      } else if (now > new Date(contest.endTime)) {
+        contestObj.status = 'past';
+      } else {
+        contestObj.status = 'ongoing';
+      }
+      return contestObj;
+    });
     
     // Filter by status if specified
     if (status) {
-      filter.status = status;
+      if (status === 'past') {
+        // For past contests, get only the last 30
+        contests = contests
+          .filter(contest => contest.status === 'past')
+          .sort((a, b) => new Date(b.endTime) - new Date(a.endTime))
+          .slice(0, 30);
+      } else if (status === 'ongoing') {
+        // For ongoing contests, show all that are currently running
+        contests = contests.filter(contest => contest.status === 'ongoing');
+      } else {
+        // For upcoming contests, show all
+        contests = contests.filter(contest => contest.status === status);
+      }
     }
-    
-    const contests = await Contest.find(filter).sort({ startTime: 1 });
     
     res.json({
       success: true,
@@ -56,9 +89,21 @@ exports.getContest = async (req, res) => {
       });
     }
     
+    // Calculate status dynamically
+    const now = new Date();
+    const contestObj = contest.toObject();
+    
+    if (now < new Date(contest.startTime)) {
+      contestObj.status = 'upcoming';
+    } else if (now > new Date(contest.endTime)) {
+      contestObj.status = 'past';
+    } else {
+      contestObj.status = 'ongoing';
+    }
+    
     res.json({
       success: true,
-      data: contest
+      data: contestObj
     });
   } catch (error) {
     console.error('Error in getContest:', error);
