@@ -1,29 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 const AdminPage = () => {
+  const { user, login } = useAuth();
   const [contests, setContests] = useState([]);
-  const [selectedContest, setSelectedContest] = useState(null);
-  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedContest, setSelectedContest] = useState(null);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [isLoginForm, setIsLoginForm] = useState(true);
+  const [loginError, setLoginError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
-    fetchContests();
-  }, []);
+    if (user?.isAdmin) {
+      fetchContests();
+    }
+  }, [user]);
 
   const fetchContests = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/contests');
       if (response.data.success) {
+        // Sort contests by start time in descending order
         const sortedContests = response.data.data.sort((a, b) => 
           new Date(b.startTime) - new Date(a.startTime)
         );
         setContests(sortedContests);
       }
     } catch (error) {
-      setError('Failed to fetch contests');
       console.error('Error fetching contests:', error);
+      setError('Failed to fetch contests');
     } finally {
       setLoading(false);
     }
@@ -32,23 +42,91 @@ const AdminPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/solutions', {
-        contestId: selectedContest._id,
-        youtubeUrl,
-      });
-      if (response.data.success) {
-        setYoutubeUrl('');
+      const result = await login(email, password);
+      if (result.success) {
+        setIsLoginForm(false);
         fetchContests();
+      } else {
+        setLoginError(result.error || 'Login failed');
       }
     } catch (error) {
-      setError('Failed to add solution');
-      console.error('Error adding solution:', error);
+      setLoginError('An error occurred during login');
     }
   };
 
+  const handleAddSolution = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/solutions', {
+        contestId: selectedContest._id,
+        youtubeUrl
+      });
+      
+      if (response.data.success) {
+        setYoutubeUrl('');
+        // Refresh contests to show updated solution
+        fetchContests();
+      }
+    } catch (error) {
+      console.error('Error adding solution:', error);
+      setError('Failed to add solution');
+    }
+  };
+
+  if (!user?.isAdmin) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Admin Login</h2>
+          
+          {loginError && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-zinc-900">
+      <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -56,129 +134,91 @@ const AdminPage = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-zinc-900 space-y-4">
-        <div className="text-red-500 text-lg font-semibold">{error}</div>
-        <button 
-          onClick={fetchContests}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          Try Again
-        </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Admin Dashboard
-            </h1>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {contests.filter(contest => contest.status === 'past').length} past contests
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Past Contests List */}
+        <div className="lg:col-span-2">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Past Contests</h2>
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {contests.filter(contest => new Date(contest.endTime) < new Date()).map(contest => (
+                <div
+                  key={contest._id}
+                  className={`p-4 rounded-lg border ${
+                    selectedContest?._id === contest._id
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  } cursor-pointer hover:border-primary transition-colors duration-200`}
+                  onClick={() => setSelectedContest(contest)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-white">{contest.name}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(contest.startTime).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                      {contest.platform}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Past Contests List */}
-            <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-                  <svg className="w-6 h-6 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  Past Contests
-                </h2>
-                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                  {contests
-                    .filter(contest => contest.status === 'past')
-                    .map(contest => (
-                      <div
-                        key={contest._id}
-                        className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${
-                          selectedContest?._id === contest._id
-                            ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-primary/50 dark:hover:border-primary/50'
-                        }`}
-                        onClick={() => setSelectedContest(contest)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                            {contest.name}
-                          </h3>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(contest.startTime).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                          {contest.platform}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
+        </div>
 
-            {/* Add Solution Form */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 sticky top-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-                  <svg className="w-6 h-6 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Add Solution
-                </h2>
-                {selectedContest ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Selected Contest
-                      </label>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedContest.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{selectedContest.platform}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        YouTube URL
-                      </label>
-                      <input
-                        type="url"
-                        value={youtubeUrl}
-                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-                        placeholder="https://youtube.com/watch?v=..."
-                        required
-                      />
-                    </div>
-                    <button 
-                      type="submit" 
-                      className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Solution
-                    </button>
-                  </form>
-                ) : (
-                  <div className="text-center py-8">
-                    <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <p className="mt-4 text-gray-600 dark:text-gray-400">
-                      Select a contest to add a solution
-                    </p>
+        {/* Add Solution Form */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 sticky top-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add Solution</h2>
+            
+            {selectedContest ? (
+              <>
+                <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h3 className="font-medium text-gray-900 dark:text-white">{selectedContest.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(selectedContest.startTime).toLocaleString()}
+                  </p>
+                </div>
+
+                <form onSubmit={handleAddSolution} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      YouTube URL
+                    </label>
+                    <input
+                      type="url"
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="https://youtube.com/watch?v=..."
+                      required
+                    />
                   </div>
-                )}
-              </div>
-            </div>
+
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    Add Solution
+                  </button>
+                </form>
+              </>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">
+                Select a contest to add a solution
+              </p>
+            )}
           </div>
         </div>
       </div>

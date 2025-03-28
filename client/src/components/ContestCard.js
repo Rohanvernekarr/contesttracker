@@ -114,7 +114,7 @@ const ContestCard = ({ contest, isBookmarked, onBookmark }) => {
       </div>
 
       {/* Contest Name */}
-      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 group-hover:text-primary transition-colors duration-200">
+      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4  transition-colors duration-200">
         {contest.name}
       </h3>
 
@@ -139,7 +139,7 @@ const ContestCard = ({ contest, isBookmarked, onBookmark }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-medium mr-2">Time until start:</span>
-          <span className="text-primary">{timeRemaining}</span>
+          <span className="text-gray-400">{timeRemaining}</span>
         </div>
       </div>
 

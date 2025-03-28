@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ContestCard from './ContestCard';
 import FilterComponent from './FilterComponent';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const ContestList = () => {
+  const { user } = useAuth();
   const [contests, setContests] = useState([]);
   const [filteredContests, setFilteredContests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,9 +14,6 @@ const ContestList = () => {
     status: 'upcoming'
   });
   const [bookmarks, setBookmarks] = useState([]);
-  
-  // User ID would typically come from authentication
-  const userId = '123';  // Mock user ID
 
   const fetchContests = useCallback(async () => {
     try {
@@ -35,15 +34,19 @@ const ContestList = () => {
   }, [filters]);
 
   const fetchBookmarks = useCallback(async () => {
+    if (!user) return;
+    
     try {
-      const response = await api.get(`/bookmarks/${userId}`);
-      // Extract contest IDs from bookmarks
-      const bookmarkedIds = response.data.data.map(bookmark => bookmark.contestId._id);
-      setBookmarks(bookmarkedIds);
+      const response = await api.get('/bookmarks');
+      if (response.data.success) {
+        // Extract contest IDs from bookmarks
+        const bookmarkedIds = response.data.data.map(contest => contest._id);
+        setBookmarks(bookmarkedIds);
+      }
     } catch (error) {
       console.error('Error fetching bookmarks:', error);
     }
-  }, [userId]);
+  }, [user]);
 
   useEffect(() => {
     fetchContests();
@@ -55,15 +58,22 @@ const ContestList = () => {
   };
 
   const handleBookmark = async (contestId, isBookmarked) => {
+    if (!user) {
+      // Show login modal or redirect to login
+      return;
+    }
+
     try {
       if (isBookmarked) {
         // Remove bookmark
-        await api.delete(`/bookmarks/${userId}/${contestId}`);
+        await api.delete(`/bookmarks/${contestId}`);
         setBookmarks(bookmarks.filter(id => id !== contestId));
       } else {
         // Add bookmark
-        await api.post('/bookmarks', { userId, contestId });
-        setBookmarks([...bookmarks, contestId]);
+        const response = await api.post('/bookmarks', { contestId });
+        if (response.data.success) {
+          setBookmarks([...bookmarks, contestId]);
+        }
       }
     } catch (error) {
       console.error('Error updating bookmark:', error);

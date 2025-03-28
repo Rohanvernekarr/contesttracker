@@ -8,7 +8,7 @@ const Contest = require('../models/Contest');
  */
 exports.getBookmarks = async (req, res) => {
   try {
-    const bookmarks = await Bookmark.find().populate('contestId');
+    const bookmarks = await Bookmark.find({ userId: req.user.id }).populate('contestId');
     
     res.json({
       success: true,
@@ -50,7 +50,10 @@ exports.addBookmark = async (req, res) => {
     }
     
     // Check if bookmark already exists
-    const existingBookmark = await Bookmark.findOne({ contestId });
+    const existingBookmark = await Bookmark.findOne({ 
+      contestId,
+      userId: req.user.id 
+    });
     if (existingBookmark) {
       return res.status(400).json({
         success: false,
@@ -59,7 +62,8 @@ exports.addBookmark = async (req, res) => {
     }
     
     const bookmark = await Bookmark.create({
-      contestId
+      contestId,
+      userId: req.user.id
     });
     
     res.status(201).json({
@@ -84,7 +88,10 @@ exports.removeBookmark = async (req, res) => {
   try {
     const { contestId } = req.params;
     
-    const bookmark = await Bookmark.findOneAndDelete({ contestId });
+    const bookmark = await Bookmark.findOneAndDelete({ 
+      contestId,
+      userId: req.user.id 
+    });
     
     if (!bookmark) {
       return res.status(404).json({

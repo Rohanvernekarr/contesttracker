@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -5,6 +6,7 @@ const cron = require('node-cron');
 const contestRoutes = require('./routes/contestRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const solutionRoutes = require('./routes/solutionRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { fetchAllContests } = require('./services/contestFetcher');
 const { fetchYoutubeVideos } = require('./services/youtubeService');
 
@@ -24,6 +26,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/contest-tra
 app.use('/api/contests', contestRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/solutions', solutionRoutes);
+app.use('/api/auth', authRoutes);
 
 
 cron.schedule('0 */6 * * *', async () => {

@@ -1,11 +1,60 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import LoginModal from './auth/LoginModal';
+import { loadGoogleScript, initializeGoogleSignIn, renderGoogleSignInButton } from '../utils/googleAuth';
 
 const Navbar = () => {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, googleLogin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const initializeGoogle = async () => {
+      try {
+        await loadGoogleScript();
+        initializeGoogleSignIn(handleGoogleCallback);
+        renderGoogleSignInButton('google-sign-in-button');
+      } catch (error) {
+        console.error('Error initializing Google Sign-In:', error);
+      }
+    };
+
+    if (!user) {
+      initializeGoogle();
+    }
+  }, [user]);
+
+  const handleGoogleCallback = async (response) => {
+    try {
+      console.log('Google Sign-In response:', response);
+      const result = await googleLogin(response.credential);
+      if (result.success) {
+        setIsLoginModalOpen(false);
+        setIsUserMenuOpen(false);
+        // Redirect to bookmarks page after successful login
+        navigate('/bookmarks');
+      } else {
+        console.error('Google login failed:', result.error);
+        // Show error message to user
+        alert(result.error || 'Failed to sign in with Google');
+      }
+    } catch (error) {
+      console.error('Error during Google login:', error);
+      alert('An error occurred during Google sign-in');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    navigate('/');
+  };
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -14,7 +63,7 @@ const Navbar = () => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/bookmarks', label: 'Bookmarks' },
-    { path: '/admin', label: 'Admin' },
+    ...(user?.isAdmin ? [{ path: '/admin', label: 'Admin' }] : []),
   ];
 
   return (
@@ -24,7 +73,7 @@ const Navbar = () => {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-7 h-7 drak:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               <span className="text-2xl font-sans text-gray-900 dark:text-white">ContestTracker</span>
@@ -40,7 +89,7 @@ const Navbar = () => {
                 className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 ${
                   isActive(link.path)
                     ? 'text-primary dark:text-primary'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                 }`}
               >
                 {link.label}
@@ -56,7 +105,7 @@ const Navbar = () => {
             {/* Theme Toggle */}
             <button title='theme'
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-400 dark:border-gray-700 transition-colors duration-200"
+              className="p-2 rounded-lg bg-gray-100 dark:bg-zinc-900 hover:bg-gray-200 dark:hover:bg-zinc-800 border border-gray-400 dark:border-gray-700 transition-colors duration-200"
             >
               {isDark ? (
                 <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,6 +148,54 @@ const Navbar = () => {
                 </svg>
               </button>
             </div>
+
+            {/* User Menu */}
+            <div className="relative">
+              {user ? (
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  <img
+                    src={user.picture || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                  />
+                  <span className="text-sm font-medium">{user.name}</span>
+                  <svg
+                    className={`h-4 w-4 ${isUserMenuOpen ? 'transform rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    Sign in
+                  </button>
+                  <div id="google-sign-in-button" className="w-40"></div>
+                </div>
+              )}
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
+                  <div className="py-1">
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -126,6 +223,11 @@ const Navbar = () => {
           ))}
         </div>
       </div>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
     </nav>
   );
 };
