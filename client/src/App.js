@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import BookmarksPage from './pages/BookmarksPage';
 import AdminPage from './pages/AdminPage';
+import LoginPage from './pages/LoginPage';
 import Footer from './components/Footer';
 
 // Protected Route component
@@ -20,12 +21,14 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/" />;
+  // For admin routes, we'll show the page (which includes the login form) even if not logged in
+  if (requireAdmin) {
+    return children;
   }
 
-  if (requireAdmin && !user.isAdmin) {
-    return <Navigate to="/" />;
+  // For non-admin protected routes (like bookmarks), redirect to login if not logged in
+  if (!user) {
+    return <Navigate to="/login" state={{ from: { pathname: window.location.pathname } }} />;
   }
 
   return children;
@@ -41,6 +44,7 @@ const App = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
               <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
                 <Route
                   path="/bookmarks"
                   element={

@@ -76,16 +76,33 @@ const AdminPage = () => {
   if (!user?.isAdmin) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Admin Login</h2>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 max-w-md mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Access Required</h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Please log in with your admin credentials to access this page
+            </p>
+          </div>
           
           {loginError && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {loginError}
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded relative">
+              <span className="block sm:inline">{loginError}</span>
+              <button
+                onClick={() => setLoginError('')}
+                className="absolute top-0 right-0 p-4"
+              >
+                <svg className="h-4 w-4 fill-current" role="button" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email
@@ -94,7 +111,8 @@ const AdminPage = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="admin@contesttracker.com"
                 required
               />
             </div>
@@ -107,16 +125,25 @@ const AdminPage = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="••••••••"
                 required
               />
             </div>
 
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Demo Credentials</h3>
+              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <p>Email: admin@contesttracker.com</p>
+                <p>Password: admin123</p>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
             >
-              Login
+              Sign in as Admin
             </button>
           </form>
         </div>

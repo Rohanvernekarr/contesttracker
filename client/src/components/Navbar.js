@@ -37,8 +37,6 @@ const Navbar = () => {
       if (result.success) {
         setIsLoginModalOpen(false);
         setIsUserMenuOpen(false);
-        // Redirect to bookmarks page after successful login
-        navigate('/bookmarks');
       } else {
         console.error('Google login failed:', result.error);
         // Show error message to user
@@ -63,7 +61,7 @@ const Navbar = () => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/bookmarks', label: 'Bookmarks' },
-    ...(user?.isAdmin ? [{ path: '/admin', label: 'Admin' }] : []),
+    { path: '/admin', label: 'Admin' }
   ];
 
   return (
@@ -172,14 +170,8 @@ const Navbar = () => {
                   </svg>
                 </button>
               ) : (
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                  >
-                    Sign in
-                  </button>
-                  <div id="google-sign-in-button" className="w-40"></div>
+                <div className="flex space-x-4 items-center ">
+                  <div id="google-sign-in-button" className="w-40  "></div>
                 </div>
               )}
 

@@ -13,19 +13,11 @@ const createAdminUser = async () => {
     await User.deleteOne({ email: 'admin@contesttracker.com' });
     console.log('Deleted existing admin user if any');
     
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('admin123', salt);
-    console.log('Generated hashed password:', {
-      length: hashedPassword.length,
-      startsWith: hashedPassword.substring(0, 10) + '...'
-    });
-
-    // Create new admin user
+    // Create new admin user with plain password
     const adminUser = await User.create({
       name: 'Admin User',
       email: 'admin@contesttracker.com',
-      password: hashedPassword,
+      password: 'admin123', // Plain password, will be hashed by the pre-save hook
       isAdmin: true
     });
 

@@ -23,22 +23,13 @@ exports.getCurrentUser = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
-    res.json({
-      success: true,
-      data: user
-    });
+    res.json({ success: true, data: user });
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error'
-    });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 };
 
@@ -46,7 +37,11 @@ exports.getCurrentUser = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt:', { email });
+    console.log('Login attempt:', { 
+      email,
+      passwordLength: password?.length,
+      password: password
+    });
     
     // Find user
     const user = await User.findOne({ email });
@@ -62,7 +57,8 @@ exports.login = async (req, res) => {
       id: user._id, 
       email: user.email, 
       isAdmin: user.isAdmin,
-      hasPassword: !!user.password
+      hasPassword: !!user.password,
+      passwordLength: user.password?.length
     });
     
     // Check if user is admin
@@ -118,23 +114,16 @@ exports.googleLogin = async (req, res) => {
     const { token } = req.body;
     
     if (!token) {
-      return res.status(400).json({
-        success: false,
-        error: 'No token provided'
-      });
+      return res.status(400).json({ success: false, error: 'No token provided' });
     }
 
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET is not defined');
-      return res.status(500).json({
-        success: false,
-        error: 'Server configuration error'
-      });
+      return res.status(500).json({ success: false, error: 'Server configuration error' });
     }
 
     console.log('Verifying Google token...');
     
-    // Verify Google token
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -143,7 +132,6 @@ exports.googleLogin = async (req, res) => {
     const payload = ticket.getPayload();
     console.log('Google payload:', payload);
     
-    // Find or create user
     let user = await User.findOne({ email: payload.email });
     
     if (!user) {
@@ -157,7 +145,6 @@ exports.googleLogin = async (req, res) => {
       });
     } else {
       console.log('Updating existing user...');
-      // Update user's Google ID and avatar if they don't have them
       if (!user.googleId) {
         user.googleId = payload.sub;
       }
@@ -167,7 +154,6 @@ exports.googleLogin = async (req, res) => {
       await user.save();
     }
     
-    // Generate token
     const jwtToken = generateToken(user);
     
     console.log('Sending response with user data...');
@@ -186,9 +172,6 @@ exports.googleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in googleLogin:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Server error during Google login'
-    });
+    res.status(500).json({ success: false, error: error.message || 'Server error during Google login' });
   }
-}; 
+};
